@@ -1,0 +1,21 @@
+# Exclude local caches and virtual environments
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+*.env
+
+# Exclude deployment specs and local DB locks
+.firebase/
+.firebaserc
+migrate_template.py
+get_all_columns.py
+test_*.py
+Dockerfile
+firebase.json

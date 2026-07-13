@@ -57,10 +57,9 @@ chart_context_store = {}
 # Database
 # ---------------------------------------------------------------------------
 def init_database(user, password, database) -> SQLDatabase:
-    db_uri = (
-        f"mssql+pyodbc://{user}:{password}@localhost\\MSSQLSERVER01/{database}"
-        "?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=yes"
-    )
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    db_path = os.path.join(base_dir, "data.db")
+    db_uri = f"sqlite:///{db_path}"
     return SQLDatabase.from_uri(db_uri)
 
 # ---------------------------------------------------------------------------
@@ -835,13 +834,297 @@ _ECHARTS_BASE = {
 }
 
 
+def render_matplotlib_base64(option, chart_type, chart_title):
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import io
+    import base64
+    
+    try:
+        # Extract series
+        series_list = option.get("series", [])
+        if not series_list:
+            return None
+            
+        colors = option.get("color", BAR_PALETTE)
+        
+        # Setup figure
+        plt.close('all')
+        
+        # Radar needs polar coordinates
+        if chart_type == "radar":
+            fig, ax = plt.subplots(figsize=(7, 4.5), subplot_kw={'projection': 'polar'})
+        else:
+            fig, ax = plt.subplots(figsize=(7, 4.5))
+            
+        # Determine background
+        fig.patch.set_facecolor('#343541')
+        if chart_type != "radar":
+            ax.set_facecolor('#343541')
+            
+        # Common text styling helper
+        text_color = '#c5c8d3'
+        
+        # ── LINE & AREA ──
+        if chart_type in ["line", "area"]:
+            x_data = option.get("xAxis", {}).get("data", [])
+            if isinstance(option.get("xAxis"), list) and option["xAxis"]:
+                x_data = option["xAxis"][0].get("data", [])
+            
+            x_idx = np.arange(len(x_data))
+            
+            for i, s in enumerate(series_list):
+                y_data = s.get("data", [])
+                y_clean = [float(v) if (v is not None and v == v) else 0.0 for v in y_data]
+                
+                label = s.get("name", f"Series {i+1}")
+                color = colors[i % len(colors)]
+                
+                ax.plot(x_idx, y_clean, label=label, color=color, linewidth=2.5, marker='o', markersize=4)
+                
+                if chart_type == "area" or "areaStyle" in s:
+                    ax.fill_between(x_idx, y_clean, color=color, alpha=0.15)
+                    
+            ax.set_xticks(x_idx)
+            ax.set_xticklabels(x_data, rotation=25, ha='right', fontsize=8)
+            ax.legend(facecolor='#1e1e2e', edgecolor='none', labelcolor=text_color)
+            
+        # ── BAR (HORIZONTAL) ──
+        elif chart_type == "bar" and "yAxis" in option and option["yAxis"].get("type") == "category":
+            y_data = option["yAxis"].get("data", [])
+            y_idx = np.arange(len(y_data))
+            
+            s = series_list[0]
+            x_data = s.get("data", [])
+            x_clean = [float(v) if (v is not None and v == v) else 0.0 for v in x_data]
+            
+            color = colors[0]
+            ax.barh(y_idx, x_clean, color=color, height=0.6, edgecolor='none')
+            ax.set_yticks(y_idx)
+            ax.set_yticklabels(y_data, fontsize=9)
+            
+        # ── BAR (VERTICAL / CLUSTERED / STACKED / HISTOGRAM) ──
+        elif chart_type in ["bar", "clustered_bar", "stacked_bar", "histogram"]:
+            x_data = option.get("xAxis", {}).get("data", [])
+            if isinstance(option.get("xAxis"), list) and option["xAxis"]:
+                x_data = option["xAxis"][0].get("data", [])
+                
+            x_idx = np.arange(len(x_data))
+            
+            if chart_type == "stacked_bar" or any(s.get("stack") for s in series_list):
+                bottoms = np.zeros(len(x_data))
+                for i, s in enumerate(series_list):
+                    y_data = s.get("data", [])
+                    y_clean = np.array([float(v) if (v is not None and v == v) else 0.0 for v in y_data])
+                    label = s.get("name", f"Series {i+1}")
+                    color = colors[i % len(colors)]
+                    
+                    ax.bar(x_idx, y_clean, bottom=bottoms, label=label, color=color, width=0.6)
+                    bottoms += y_clean
+                ax.legend(facecolor='#1e1e2e', edgecolor='none', labelcolor=text_color)
+            else:
+                num_series = len(series_list)
+                width = 0.7 / max(1, num_series)
+                for i, s in enumerate(series_list):
+                    y_data = s.get("data", [])
+                    y_clean = [float(v) if (v is not None and v == v) else 0.0 for v in y_data]
+                    label = s.get("name", f"Series {i+1}")
+                    color = colors[i % len(colors)]
+                    
+                    offset = (i - (num_series - 1) / 2) * width
+                    ax.bar(x_idx + offset, y_clean, width, label=label, color=color)
+                
+                if num_series > 1:
+                    ax.legend(facecolor='#1e1e2e', edgecolor='none', labelcolor=text_color)
+                    
+            ax.set_xticks(x_idx)
+            ax.set_xticklabels(x_data, rotation=25, ha='right', fontsize=8)
+            
+        # ── PIE & DONUT ──
+        elif chart_type in ["pie", "donut"]:
+            pie_data = series_list[0].get("data", [])
+            labels = [item.get("name", "") for item in pie_data]
+            values = [float(item.get("value", 0)) for item in pie_data]
+            
+            is_donut = chart_type == "donut" or (isinstance(series_list[0].get("radius"), list) and len(series_list[0]["radius"]) > 1)
+            
+            wedgeprops = {}
+            if is_donut:
+                wedgeprops = dict(width=0.4, edgecolor='#343541', linewidth=2)
+            else:
+                wedgeprops = dict(edgecolor='#343541', linewidth=1)
+                
+            ax.pie(values, labels=labels, colors=colors[:len(values)], 
+                   autopct='%1.1f%%', pctdistance=0.75 if is_donut else 0.6,
+                   textprops={'color': text_color, 'fontsize': 9},
+                   wedgeprops=wedgeprops, startangle=140)
+            ax.axis('equal')
+            
+        # ── SCATTER ──
+        elif chart_type == "scatter":
+            s = series_list[0]
+            pts = s.get("data", [])
+            x_vals = [float(pt[0]) for pt in pts if pt and len(pt) >= 2]
+            y_vals = [float(pt[1]) for pt in pts if pt and len(pt) >= 2]
+            
+            ax.scatter(x_vals, y_vals, color=colors[0], alpha=0.7, edgecolors='none', s=40)
+            
+        # ── COMBO (MIXED BAR + LINE) ──
+        elif chart_type == "combo":
+            x_data = option.get("xAxis", {}).get("data", [])
+            if isinstance(option.get("xAxis"), list) and option["xAxis"]:
+                x_data = option["xAxis"][0].get("data", [])
+            x_idx = np.arange(len(x_data))
+            
+            ax2 = ax.twinx()
+            ax2.set_facecolor('none')
+            
+            for i, s in enumerate(series_list):
+                y_data = s.get("data", [])
+                y_clean = [float(v) if (v is not None and v == v) else 0.0 for v in y_data]
+                label = s.get("name", f"Series {i+1}")
+                color = colors[i % len(colors)]
+                
+                is_line = s.get("type") == "line" or s.get("yAxisIndex") == 1
+                if is_line:
+                    ax2.plot(x_idx, y_clean, label=label, color=color, linewidth=2.5, marker='o', markersize=5)
+                else:
+                    ax.bar(x_idx, y_clean, label=label, color=color, width=0.4, alpha=0.85)
+            
+            ax.set_xticks(x_idx)
+            ax.set_xticklabels(x_data, rotation=25, ha='right', fontsize=8)
+            
+            lines, labels = ax.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            ax.legend(lines + lines2, labels + labels2, facecolor='#1e1e2e', edgecolor='none', labelcolor=text_color)
+            
+            ax2.tick_params(colors=text_color, which='both')
+            ax2.yaxis.label.set_color(text_color)
+            ax2.spines['right'].set_color('#444654')
+            
+        # ── GAUGE ──
+        elif chart_type == "gauge":
+            gauge_data = series_list[0].get("data", [{}])[0]
+            val = float(gauge_data.get("value", 0))
+            name = gauge_data.get("name", "")
+            g_min = float(series_list[0].get("min", 0))
+            g_max = float(series_list[0].get("max", 100))
+            
+            ax.axis('off')
+            ax.barh(0, g_max, color='#444654', height=0.2, edgecolor='none')
+            pct = min(g_max, max(g_min, val))
+            ax.barh(0, pct, color=colors[2], height=0.2, edgecolor='none')
+            
+            ax.text(g_max/2, 0.25, f"{val:.2f}", color='#ffffff', fontsize=26, weight='bold', ha='center', va='center')
+            ax.text(g_max/2, -0.25, name, color=text_color, fontsize=14, ha='center', va='center')
+            
+            ax.set_xlim(g_min - g_max*0.05, g_max + g_max*0.05)
+            ax.set_ylim(-1, 1)
+            
+        # ── RADAR ──
+        elif chart_type == "radar":
+            radar_meta = option.get("radar", {})
+            indicators = radar_meta.get("indicator", [])
+            labels = [ind.get("name", "") for ind in indicators]
+            
+            radar_data = series_list[0].get("data", [])
+            
+            ax.set_facecolor('#343541')
+            ax.tick_params(colors=text_color)
+            
+            num_vars = len(labels)
+            angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+            angles += angles[:1]
+            
+            for i, d_item in enumerate(radar_data):
+                vals = d_item.get("value", [])
+                vals_clean = [float(v) for v in vals]
+                vals_clean += vals_clean[:1]
+                
+                label = d_item.get("name", f"Data {i+1}")
+                color = colors[i % len(colors)]
+                
+                ax.plot(angles, vals_clean, color=color, linewidth=2, label=label)
+                ax.fill(angles, vals_clean, color=color, alpha=0.15)
+                
+            ax.set_theta_offset(np.pi / 2)
+            ax.set_theta_direction(-1)
+            ax.set_thetagrids(np.degrees(angles[:-1]), labels, fontsize=8, color=text_color)
+            ax.legend(facecolor='#1e1e2e', edgecolor='none', labelcolor=text_color, loc='upper right', bbox_to_anchor=(1.3, 1.1))
+            
+        # ── FUNNEL ──
+        elif chart_type == "funnel":
+            funnel_data = series_list[0].get("data", [])
+            labels = [item.get("name", "") for item in funnel_data]
+            values = [float(item.get("value", 0)) for item in funnel_data]
+            
+            sorted_indices = np.argsort(values)[::-1]
+            labels = [labels[idx] for idx in sorted_indices]
+            values = [values[idx] for idx in sorted_indices]
+            
+            y_idx = np.arange(len(values))
+            for i, val in enumerate(values):
+                color = colors[i % len(colors)]
+                ax.barh(len(values) - 1 - i, val, left=-val/2, height=0.6, color=color, edgecolor='none')
+                ax.text(0, len(values) - 1 - i, f"{labels[i]}: {val:.0f}", color='#ffffff', ha='center', va='center', weight='bold', fontsize=9)
+                
+            ax.axis('off')
+            ax.set_xlim(-max(values)*0.6, max(values)*0.6)
+            
+        else:
+            return None
+            
+        if chart_type not in ["gauge", "funnel"]:
+            ax.tick_params(colors=text_color, which='both')
+            ax.xaxis.label.set_color(text_color)
+            ax.yaxis.label.set_color(text_color)
+            for spine in ax.spines.values():
+                spine.set_color('#444654')
+            if chart_type != "radar":
+                ax.grid(True, color=(1, 1, 1, 0.08), linestyle='--', linewidth=0.5)
+            
+        if chart_title:
+            fig.suptitle(chart_title, color='#ffffff', fontsize=12, weight='bold', y=0.98)
+            
+        plt.tight_layout()
+        
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=120, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
+        buf.seek(0)
+        img_bytes = buf.read()
+        buf.close()
+        plt.close(fig)
+        
+        base64_str = base64.b64encode(img_bytes).decode('utf-8')
+        return base64_str
+        
+    except Exception as e:
+        print(f"Error generating matplotlib chart: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 def _echarts_payload(option, chart_type, chart_title):
-    """Wrap an ECharts option dict into the chart payload envelope."""
+    """Wrap an ECharts option dict into the chart payload envelope or render as Base64 PNG."""
     merged = dict(_ECHARTS_BASE)
     merged.update(option)
-    # preserve base colour palette unless overridden
     if "color" not in option:
         merged["color"] = BAR_PALETTE
+        
+    # Attempt to render as base64 picture first (user requirement)
+    base64_data = render_matplotlib_base64(merged, chart_type, chart_title)
+    if base64_data:
+        return {
+            "type": "image/png",
+            "chart_type": chart_type,
+            "title": chart_title,
+            "data": base64_data
+        }
+        
+    # Fallback to interactive ECharts if Matplotlib rendering fails
     return {
         "type": "echarts",
         "chart_type": chart_type,

@@ -1,0 +1,14 @@
+Django>=5.0
+pandas>=2.0
+sqlalchemy>=2.0
+matplotlib>=3.8
+numpy>=1.24
+chromadb>=0.4
+langchain>=0.1
+langchain-community>=0.0.10
+langchain-google-genai>=1.0
+langgraph>=0.0.30
+pydantic>=2.0
+gunicorn>=21.2
+python-dotenv>=1.0
+whitenoise[brotli]>=6.6.0
