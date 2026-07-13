@@ -678,9 +678,9 @@ def run_agent_graph(user_query: str, db, chat_history: list) -> AgentResponse:
                 "I encountered an unexpected error processing your request. "
                 "Please try rephrasing your question or ask something else.\n\n"
                 "**Suggestive analysis:**\n"
-                "- What tables are in this database?\n"
-                "- Show me a summary of the data\n"
-                "- What are the top KPIs?\n"
+                "- What is the total sales revenue?\n"
+                "- Which product categories generate the most revenue?\n"
+                "- What are the top 5 countries by sales volume?\n"
             ),
             error=str(e),
         )

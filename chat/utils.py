@@ -462,12 +462,12 @@ def get_response_with_query(user_query, db, chat_history):
 # ---------------------------------------------------------------------------
 def get_default_start_suggestions():
     return [
-        "What are the top KPIs in this dataset?",
-        "Show monthly trends for the main metrics.",
-        "Which categories contribute most to total value?",
-        "Where are unusual spikes or drops happening?",
-        "Compare current period vs previous period.",
-        "Break down performance by region or department.",
+        "What is the total sales revenue?",
+        "Which product categories generate the most revenue?",
+        "Show the monthly sales trend.",
+        "What is the total quantity of products returned by category?",
+        "What are the top 5 countries by sales volume?",
+        "Can you show a breakdown of customer occupations and their average annual income?",
     ]
 
 
