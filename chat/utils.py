@@ -1108,23 +1108,12 @@ def render_matplotlib_base64(option, chart_type, chart_title):
 
 
 def _echarts_payload(option, chart_type, chart_title):
-    """Wrap an ECharts option dict into the chart payload envelope or render as Base64 PNG."""
+    """Wrap an ECharts option dict into the chart payload envelope."""
     merged = dict(_ECHARTS_BASE)
     merged.update(option)
     if "color" not in option:
         merged["color"] = BAR_PALETTE
         
-    # Attempt to render as base64 picture first (user requirement)
-    base64_data = render_matplotlib_base64(merged, chart_type, chart_title)
-    if base64_data:
-        return {
-            "type": "image/png",
-            "chart_type": chart_type,
-            "title": chart_title,
-            "data": base64_data
-        }
-        
-    # Fallback to interactive ECharts if Matplotlib rendering fails
     return {
         "type": "echarts",
         "chart_type": chart_type,
