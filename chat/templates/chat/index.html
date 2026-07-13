@@ -575,6 +575,7 @@
         .message.bot .message-body {
             width: 100%;
             max-width: min(100%, 860px);
+            min-width: 0;
         }
 
         .message.bot .message-content {
@@ -836,6 +837,8 @@
             padding: 10px;
             border-radius: 6px;
             overflow-x: auto;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .message-content code {
@@ -1074,6 +1077,11 @@
             background: rgba(0, 0, 0, 0.18);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .chart-header {
@@ -1151,10 +1159,17 @@
         }
 
         .echarts-container {
-            width: 100%;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
             height: 340px;
             border-radius: 10px;
             display: block;
+        }
+
+        .echarts-container canvas,
+        .echarts-container div {
+            max-width: 100% !important;
         }
 
 
@@ -1339,6 +1354,24 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
         $(document).ready(function () {
+            window.activeECharts = window.activeECharts || [];
+
+            function resizeAllCharts() {
+                if (window.activeECharts) {
+                    window.activeECharts = window.activeECharts.filter(function (chart) {
+                        if (chart && !chart.isDisposed()) {
+                            try {
+                                chart.resize();
+                            } catch (e) {
+                                console.error('ECharts resize error:', e);
+                            }
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+            }
+
             var currentSessionId = null;
             var currentSearchTerm = '';
             var pendingResponseEl = null;
@@ -2282,6 +2315,7 @@
                             }
                         }
                         myChart.setOption(opt);
+                        window.activeECharts.push(myChart);
 
                         // Interactive HTML download
                         var dlHtmlBtn = document.getElementById('dl-html-' + containerId);
@@ -2807,6 +2841,9 @@
                     if (toggleBtn) toggleBtn.title = 'Collapse sidebar';
                 }
                 try { localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0'); } catch(e) {}
+                // Trigger charts resize
+                resizeAllCharts();
+                setTimeout(resizeAllCharts, 300);
             }
 
             // Restore persisted state — on mobile default to collapsed
@@ -2837,15 +2874,21 @@
             }
             // On window resize: remove backdrop if we leave mobile
             window.addEventListener('resize', function () {
-                if (!isMobile() && backdrop) {
+                var mobile = isMobile();
+                var collapsed = sidebar.classList.contains('collapsed');
+                if (!mobile && backdrop) {
                     backdrop.classList.remove('visible');
+                } else if (mobile && !collapsed && backdrop) {
+                    backdrop.classList.add('visible');
                 }
                 // Auto-open sidebar when resizing up from mobile
-                if (!isMobile() && sidebar.classList.contains('collapsed')) {
+                if (!mobile && collapsed) {
                     var saved;
                     try { saved = localStorage.getItem(SIDEBAR_KEY); } catch(e) {}
                     if (saved !== '1') setSidebarCollapsed(false);
                 }
+                // Trigger charts resize
+                resizeAllCharts();
             });
         });
     </script>
