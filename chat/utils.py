@@ -99,7 +99,7 @@ def get_exchange_rates_context():
 # ---------------------------------------------------------------------------
 def get_sql_chain(db):
     template = """
-        You are an expert MS SQL Server database engineer. Generate precise SQL queries that answer user questions, and handle cases where data might not exist.
+        You are an expert SQLite database engineer. Generate precise SQL queries that answer user questions, and handle cases where data might not exist.
 
         CRITICAL INSTRUCTIONS:
         - If the user's request does NOT require querying the database (e.g., small talk, greetings, or general questions),
@@ -107,7 +107,7 @@ def get_sql_chain(db):
         - Otherwise output ONLY the SQL query without any explanations, prefixes, or suffixes
         - Do not format the query with new lines - keep it as a single line
         - Always end the query with a semicolon (;)
-        - Use MS SQL Server syntax exclusively
+        - Use SQLite syntax exclusively
         - Always stepback to transform the query in a generic understanding, then respond effectively to the question.
         - Respond based on the database schema, very important for specific questions!
         - Carry forward any explicit filters or scope from the conversation history unless the user overrides them
@@ -126,9 +126,9 @@ def get_sql_chain(db):
         - When searching for specific terms, consider multiple relevant columns
         - Use OR conditions to search across multiple relevant columns when appropriate
 
-        MS SQL SERVER SPECIFIC SYNTAX:
-        - Use TOP instead of LIMIT: SELECT TOP 10 * FROM table
-        - Use GETDATE() for current date/time
+        SQLITE SPECIFIC SYNTAX:
+        - Use LIMIT instead of TOP: SELECT * FROM table LIMIT 10
+        - Use datetime('now') or date('now') for current date/time
         - Use LIKE for partial text matching: WHERE model_name LIKE '%corolla%'
         - Use UPPER() or LOWER() for case-insensitive searches: WHERE UPPER(model_name) = UPPER('Corolla')
 
@@ -152,7 +152,7 @@ def get_sql_chain(db):
 
         User Question: {question}
 
-        Generate the MS SQL Server query (or NO_SQL):
+        Generate the SQLite query (or NO_SQL):
         """
 
     prompt = ChatPromptTemplate.from_template(template)

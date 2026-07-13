@@ -289,7 +289,7 @@ def fix_sql(state: dict) -> dict:
         user_query = state.get("user_query", "")
 
         fix_prompt = ChatPromptTemplate.from_template("""
-You are an expert MS SQL Server database engineer. A SQL query failed with an error.
+You are an expert SQLite database engineer. A SQL query failed with an error.
 Fix the query so it executes successfully.
 
 Original user question: {question}
@@ -304,7 +304,7 @@ Error message:
 
 RULES:
 - Output ONLY the corrected SQL query, nothing else
-- Use MS SQL Server syntax
+- Use SQLite syntax
 - Do not wrap in markdown code blocks
 - End with a semicolon
 - If the error is about a missing column, check the schema and use the correct column name
