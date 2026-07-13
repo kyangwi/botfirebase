@@ -15,9 +15,13 @@ We have implemented layout responsiveness improvements and resolved the database
 ---
 
 ### 2. UI Responsiveness (Mobile & Tablet Layouts)
-- **Flex Container Constraint:** Added `min-width: 0;` and `overflow-x: hidden;` to `#main-chat` and `#chat-box` inside [index.html](file:///d:/JOSH/AgenticSQLChatBot/chat/templates/chat/index.html) and [templates/index.html](file:///d:/JOSH/AgenticSQLChatBot/templates/index.html) to prevent flex parents from expanding beyond the viewport on mobile/tablet screens.
-- **Markdown Tables:** Updated the table styling rules inside chat messages to use `display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;`. This allows multi-column data tables to scroll horizontally inside bubbles instead of stretching the main panel.
+- **Flex Container Constraint:** Added `min-width: 0;` and `overflow-x: hidden;` to `#main-chat`, `#chat-box`, and `.message.bot .message-body` inside [index.html](file:///d:/JOSH/AgenticSQLChatBot/chat/templates/chat/index.html) and [templates/index.html](file:///d:/JOSH/AgenticSQLChatBot/templates/index.html) to prevent flex parents from expanding beyond the viewport when rendering charts or tables.
+- **Markdown Tables & pre Blocks:** Updated tables to use `display: block; width: 100%; overflow-x: auto;` and pre blocks to use `max-width: 100%; box-sizing: border-box;` to prevent layout overflow.
 - **Text Wrap Protection:** Added `word-break: break-word; overflow-wrap: break-word;` to `.message-content` to safely wrap any long unbroken error tracebacks or SQL syntax statements.
+- **ECharts Resizing Engine:**
+  - Registered all instantiated charts into a tracking list `window.activeECharts`.
+  - Tied `resizeAllCharts` to both window `resize` and sidebar toggle transitions, guaranteeing charts adapt instantly to resizing windows or sliding sidebars.
+  - Placed `max-width: 100% !important` constraints on ECharts canvas and internal wrapping nodes to allow parents to shrink under flex box layouts.
 
 ---
 
