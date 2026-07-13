@@ -26,4 +26,5 @@ COPY . /app/
 RUN python manage.py collectstatic --noinput
 
 # Run the app on the specified port
-CMD exec gunicorn sqlchat_project.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0
+CMD python manage.py migrate --noinput && exec gunicorn sqlchat_project.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0
+
