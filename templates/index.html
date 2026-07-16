@@ -543,12 +543,15 @@
         /* Input Area with shadow floating */
         #message-form {
             display: flex;
-            padding: 30px 10%;
-            padding-left: calc(10% + 56px); /* Align left edge of text input with chatbot content start */
+            width: min(100%, 860px);
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 30px 16px;
             background-color: transparent;
             /* Transparent to blend */
             background-image: linear-gradient(180deg, rgba(53, 55, 64, 0), #353740 58.85%);
             position: relative;
+            box-sizing: border-box;
         }
 
         .input-wrapper {
@@ -560,9 +563,9 @@
             border-radius: 12px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
             padding: 10px;
-            max-width: 860px;
-            margin: 0 auto;
-            width: 100%;
+            margin-left: 56px; /* Indent left side to align with chatbot content start */
+            margin-right: 0;
+            width: auto;
         }
 
         #message-input {
@@ -955,6 +958,12 @@
                 background-color: var(--bg);
                 width: 100%;
                 box-sizing: border-box;
+            }
+            #main-chat.centered-layout #message-form .input-wrapper {
+                margin-left: auto;
+                margin-right: auto;
+                max-width: 860px;
+                width: 100%;
             }
         }
 
