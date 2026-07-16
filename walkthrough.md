@@ -1,31 +1,24 @@
-# Walkthrough: Layout, Overlapping, and Trend Chart Optimizations
+# Walkthrough: Layout Width Alignment & Mobile Form Positioning Fixes
 
-We have implemented layout responsiveness updates, fixed mobile overlapping, and enforced deterministic line chart rendering for trend-based user queries.
+We have aligned the web chat input text bar width to match the messages, and fixed the mobile scrolling container bounds to keep the input text form visible.
 
 ## Changes Made
 
-### 1. Enforced Line Charts for Trend Queries
-- **Trend Detection:** Implemented `_detect_time_or_ordered_trend` in [utils.py](file:///d:/JOSH/AgenticSQLChatBot/chat/utils.py). This helper checks if the user's query requests a trend (using keywords like *trend*, *over time*, *monthly*, *yearly*, *evolution*, etc.) and detects temporal date/time columns (even if stored as strings or integers).
-- **Tool Interceptor Override:** Intercepted tool-calling decisions inside `build_chart_with_tools`. If the model selects a bar chart or pie chart for a trend-based query, we programmatically rewrite the tool choice to `build_line_chart` and translate the parameter mappings.
-- **Fallback Alignment:** Integrated the trend detection engine into the fallback builder `generate_chart_base64`. If a trend query is detected, it falls back to a clean ECharts line chart instead of a category bar chart.
+### 1. Web Input Text Bar Alignment
+- **Aligned Width:** Updated `#message-form .input-wrapper` and `#main-chat.centered-layout #message-form .input-wrapper` in [index.html](file:///d:/JOSH/AgenticSQLChatBot/chat/templates/chat/index.html) to raise the `max-width` constraint from `800px` to `860px`.
+- **Result:** The user question composer now aligns perfectly with the boundaries of the message bubble container (`min(100%, 860px)`) on desktop browser viewports, providing a balanced visual layout.
 
 ---
 
-### 2. Chart Rendering Position
-- **Updated Order:** Modified the chart insertion logic in [index.html](file:///d:/JOSH/AgenticSQLChatBot/chat/templates/chat/index.html) and [templates/index.html](file:///d:/JOSH/AgenticSQLChatBot/templates/index.html) to locate the Suggestive Analysis panel (`.analysis-block`).
-- **Insertion Logic:** Charts are now inserted directly *before* the Suggestive Analysis panel, positioning them immediately after the LLM explanation text and before any suggestive question chips.
-
----
-
-### 3. Question Bar Mobile Overlapping Fix
-- **Mobile Overrides:** Added CSS overrides under media queries for mobile devices (`max-width: 768px`) in centered view state (`.centered-layout`).
-- **Relative Flow:** Placed `#message-form` in relative flow at the bottom of the viewport, enabling empty state suggestive chips to scroll vertically inside `#chat-box` without any layout collision or overlapping.
+### 2. Question Bar Mobile Display & Clipping Fix
+- **Flex Bounds Constraint:** Updated `#main-chat.centered-layout #chat-box` under the mobile (`max-width: 768px`) query from `flex: 1 1 auto;` to `flex: 1 1 0%; min-height: 0;`.
+- **Result:** This limits the chat history scrollbox size on mobile views, preventing the height of suggested questions from pushing the input form (`#message-form`) completely off-screen (which previously caused it to be hidden due to overflow clipping). The composer is now permanently docked at the bottom of the screen.
 
 ---
 
 ## Verification Results
 
-- **Django System Check:** Local checks completed successfully:
+- **Django System Check:** Checked successfully:
   ```bash
   System check identified no issues (0 silenced).
   ```
