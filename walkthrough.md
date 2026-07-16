@@ -1,13 +1,12 @@
-# Walkthrough: Text Bar Width Alignment
+# Walkthrough: Restored Prompt Bar Max-Width
 
-We have updated the user question input text field's width constraint to match the exact boundaries of the messages text content column.
+We have restored the prompt input bar width to align exactly with the full outer container bounds of both human and AI messages.
 
 ## Changes Made
 
-### 1. Unified Max-Width Alignment
-- **Width Correction:** Modified `#message-form .input-wrapper` in [index.html](file:///d:/JOSH/AgenticSQLChatBot/chat/templates/chat/index.html) and [templates/index.html](file:///d:/JOSH/AgenticSQLChatBot/templates/index.html) to restrict `max-width` to **`748px`** (down from `860px`).
-- **Symmetric Centering:** The prompt box remains symmetrically centered via `margin: 0 auto`.
-- **Result:** Since bot response messages start after a 36px avatar and 14px gap (56px offset on the left) and user messages end 56px before the right edge, the actual text content column spans exactly `860px - 56px - 56px = 748px` on desktop. The prompt box now aligns perfectly with the starting boundary of the text, avoiding any overlaps on the left (such as with the loading avatar).
+### 1. Symmetrical Centering & Width Match
+- **Restored Bounds:** Updated `#message-form .input-wrapper` and `#main-chat.centered-layout #message-form .input-wrapper` in [index.html](file:///d:/JOSH/AgenticSQLChatBot/chat/templates/chat/index.html) and [templates/index.html](file:///d:/JOSH/AgenticSQLChatBot/templates/index.html) to raise the `max-width` back to **`860px`** (up from `748px`).
+- **Result:** The query text field wrapper now spans the full `860px` width of the chat containers, aligning its left and right boundaries with the outermost edges of the messages.
 
 ---
 
