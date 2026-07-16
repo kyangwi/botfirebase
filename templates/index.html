@@ -919,6 +919,40 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
+        /* ── Mobile View Overlapping fix in centered-layout (≤ 768px) ── */
+        @media (max-width: 768px) {
+            #main-chat.centered-layout {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+            }
+            #main-chat.centered-layout #chat-box {
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+                padding: 40px 16px 20px;
+                overflow-y: auto;
+            }
+            #main-chat.centered-layout .empty-state {
+                margin-top: 10px !important;
+                margin-bottom: 20px !important;
+                padding: 10px 0;
+            }
+            #main-chat.centered-layout #message-form {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                right: auto !important;
+                transform: none !important;
+                padding: 10px 10px 16px !important;
+                background-color: var(--bg);
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+
     </style>
 </head>
 
@@ -1846,7 +1880,12 @@
                         <img class="chart-img" src="${imgSrc}" alt="${title}">
                     </div>
                 `;
-                $container.append(html);
+                var $analysis = $container.find('.analysis-block');
+                if ($analysis.length > 0) {
+                    $(html).insertBefore($analysis);
+                } else {
+                    $container.append(html);
+                }
                 var $toggle = $container.find('.analysis-toggle');
                 $toggle.show().text('Hide chart');
                 $toggle.off('click').on('click', function () {

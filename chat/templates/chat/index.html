@@ -111,6 +111,38 @@
                 from { opacity: 0; }
                 to   { opacity: 1; }
             }
+
+            /* Overlapping fix in centered-layout on mobile */
+            #main-chat.centered-layout {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+            }
+            #main-chat.centered-layout #chat-box {
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+                padding: 40px 16px 20px;
+                overflow-y: auto;
+            }
+            #main-chat.centered-layout .empty-state {
+                margin-top: 10px !important;
+                margin-bottom: 20px !important;
+                padding: 10px 0;
+            }
+            #main-chat.centered-layout #message-form {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                right: auto !important;
+                transform: none !important;
+                padding: 10px 10px 16px !important;
+                background-color: var(--bg);
+                width: 100%;
+                box-sizing: border-box;
+            }
         }
 
         /* ── Mobile Input box adjustments (≤ 600px) ── */
@@ -2275,7 +2307,12 @@
                             <div class="echarts-container" id="${containerId}"></div>
                         </div>
                     `;
-                    $container.append(html);
+                    var $analysis = $container.find('.analysis-block');
+                    if ($analysis.length > 0) {
+                        $(html).insertBefore($analysis);
+                    } else {
+                        $container.append(html);
+                    }
 
                     // Initialise ECharts
                     var dom = document.getElementById(containerId);
@@ -2436,7 +2473,12 @@
                             <img class="chart-img" src="${imgSrc}" alt="${title}" style="width:100%;border-radius:10px;display:block;">
                         </div>
                     `;
-                    $container.append(html);
+                    var $analysis = $container.find('.analysis-block');
+                    if ($analysis.length > 0) {
+                        $(html).insertBefore($analysis);
+                    } else {
+                        $container.append(html);
+                    }
                 } else {
                     return;  // nothing to render
                 }
