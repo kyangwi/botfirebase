@@ -927,7 +927,8 @@
                 height: 100vh;
             }
             #main-chat.centered-layout #chat-box {
-                flex: 1 1 auto;
+                flex: 1 1 0%;
+                min-height: 0;
                 display: flex;
                 flex-direction: column;
                 justify-content: flex-start;
@@ -946,7 +947,7 @@
                 left: auto !important;
                 right: auto !important;
                 transform: none !important;
-                padding: 10px 10px 16px !important;
+                padding: 10px 16px 16px !important;
                 background-color: var(--bg);
                 width: 100%;
                 box-sizing: border-box;
