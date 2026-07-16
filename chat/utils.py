@@ -2049,6 +2049,30 @@ SQL query:
         elif tool_name == "build_clustered_bar_chart":
             tool_args["y_columns"] = _infer_clustered_bar_series(df, user_query, requested=tool_args.get("y_columns"))
 
+        # Force line chart for trend queries
+        q = (user_query or "").lower()
+        trend_indicators = ["trend", "over time", "monthly", "yearly", "weekly", "daily", "by month", "by year", "by day", "evolution", "timeline", "growth", "history", "historical", "historique"]
+        is_trend_query = any(kw in q for kw in trend_indicators)
+
+        if is_trend_query and tool_name in ["build_bar_chart", "build_clustered_bar_chart", "build_stacked_bar_chart", "build_pie_chart", "build_area_chart"]:
+            x_col = tool_args.get("category_column") or tool_args.get("x_column")
+            if not x_col and not df.empty:
+                x_col = df.columns[0]
+            y_cols = []
+            if "y_column" in tool_args and tool_args["y_column"]:
+                y_cols = [tool_args["y_column"]]
+            elif "y_columns" in tool_args and tool_args["y_columns"]:
+                y_cols = tool_args["y_columns"]
+            else:
+                y_cols = choose_measure_columns(df)[:3]
+            tool_name = "build_line_chart"
+            tool_args = {
+                "dataset_id": dataset_id,
+                "x_column": x_col,
+                "y_columns": y_cols,
+                "title": tool_args.get("title", "")
+            }
+
         chart_payload = CHART_TOOL_MAP[tool_name](**tool_args)
         if isinstance(chart_payload, dict) and (chart_payload.get("option") or chart_payload.get("data")):
             return chart_payload
@@ -2111,6 +2135,40 @@ def has_visual_intent(question):
     return any(re.search(p, q) for p in patterns)
 
 
+def _detect_time_or_ordered_trend(df, user_query):
+    # Detects if user query is trend-based or the dataframe has date/time-like columns
+    q = (user_query or "").lower()
+    trend_keywords = [
+        "trend", "over time", "monthly", "yearly", "weekly", "daily", 
+        "by month", "by year", "by day", "evolution", "timeline", 
+        "growth", "history", "historical", "historique"
+    ]
+    is_trend_query = any(kw in q for kw in trend_keywords)
+    
+    # Check if there is an explicit time column (already parsed)
+    time_cols = [c for c in df.columns if pd.api.types.is_datetime64_any_dtype(df[c])]
+    if time_cols:
+        return time_cols[0], is_trend_query
+        
+    # Check for columns representing time (Year, Month, Date, Period, etc.)
+    time_col_names = ["date", "year", "month", "day", "quarter", "period", "week", "calendar", "time", "datekey", "annee", "mois"]
+    for col in df.columns:
+        col_lower = str(col).lower()
+        if any(t in col_lower for t in time_col_names):
+            return col, True
+            
+    # Fallback to trend query check
+    if is_trend_query and len(df.columns) >= 2:
+        # If the first column has unique values that increase or represent time/categories
+        # often the SQL query group by is the first column
+        first_col = df.columns[0]
+        # Check if it has numeric years or date strings
+        val_str = str(df[first_col].iloc[0]) if len(df) > 0 else ""
+        if re.search(r"^\d{4}$", val_str) or re.search(r"^\d{4}[-/]\d{2}", val_str):
+            return first_col, True
+            
+    return None, is_trend_query
+
 
 def generate_chart_base64(df, question, chart_pref=None):
     """Fallback chart builder â€” auto-selects the best chart type and returns an ECharts option."""
@@ -2133,14 +2191,21 @@ def generate_chart_base64(df, question, chart_pref=None):
         category_field = None
         option = {}
 
-        if time_cols:
-            x = time_cols[0]
+        # Check for time or ordered trend columns
+        x_col, is_trend = _detect_time_or_ordered_trend(df, question)
+
+        if x_col:
+            x = x_col
             top_measures = measure_cols[:3]
             plot_df = df[[x] + top_measures].dropna(subset=[x]).copy()
             if plot_df.empty:
                 return None
-            agg_df = plot_df.groupby(x, as_index=False)[top_measures].sum(numeric_only=True).sort_values(x)
-            if len(agg_df) < 2:
+            agg_df = plot_df.groupby(x, as_index=False)[top_measures].sum(numeric_only=True)
+            try:
+                agg_df = agg_df.sort_values(x)
+            except Exception:
+                pass
+            if len(agg_df) < 1:
                 return None
             chart_type = "line"
             x_field = x
