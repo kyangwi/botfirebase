@@ -376,15 +376,41 @@
             position: relative;
             min-width: 0;
             overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Center the stack of chat-box + message-form on landing page */
+        #main-chat.centered-layout {
+            justify-content: center;
+        }
+
+        #main-chat.centered-layout #chat-box {
+            flex: 0 1 auto;
+            margin-top: auto;
+            padding: 24px 16px 10px;
+            overflow-y: auto;
+            background-image: none;
+        }
+
+        #main-chat.centered-layout .empty-state {
+            margin: 0 auto;
+        }
+
+        #main-chat.centered-layout #message-form {
+            position: relative;
+            margin-bottom: auto;
+            background-image: none;
+            padding: 10px 16px 24px;
         }
 
 
 
         /* Chat box — always centered column */
         #chat-box {
-            flex: 1 1 auto;
+            flex: 1 1 100%;
+            height: 100%;
             min-height: 0;
-            padding: 24px 16px 40px;
+            padding: 24px 16px 150px;
             overflow-y: auto;
             overflow-x: hidden;
             scroll-behavior: smooth;
@@ -751,6 +777,11 @@
 
         /* Input form — always centered, matching the message column */
         #message-form {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
             display: flex;
             justify-content: center;
             width: 100%;
@@ -758,8 +789,7 @@
             margin: 0;
             padding: 20px 16px 28px;
             background-color: transparent;
-            background-image: linear-gradient(180deg, rgba(53, 55, 64, 0), #353740 58.85%);
-            position: relative;
+            background-image: linear-gradient(180deg, rgba(52, 53, 65, 0), var(--bg) 50%);
             box-sizing: border-box;
         }
 
