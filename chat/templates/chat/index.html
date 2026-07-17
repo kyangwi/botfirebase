@@ -112,38 +112,7 @@
                 to   { opacity: 1; }
             }
 
-            /* Overlapping fix in centered-layout on mobile */
-            #main-chat.centered-layout {
-                display: flex;
-                flex-direction: column;
-                height: 100vh;
-            }
-            #main-chat.centered-layout #chat-box {
-                flex: 1 1 0%;
-                min-height: 0;
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-start;
-                align-items: stretch;
-                padding: 40px 16px 20px;
-                overflow-y: auto;
-            }
-            #main-chat.centered-layout .empty-state {
-                margin-top: 10px !important;
-                margin-bottom: 20px !important;
-                padding: 10px 0;
-            }
-            #main-chat.centered-layout #message-form {
-                position: relative !important;
-                top: auto !important;
-                left: auto !important;
-                right: auto !important;
-                transform: none !important;
-                padding: 10px 16px 16px !important;
-                background-color: var(--bg);
-                width: 100%;
-                box-sizing: border-box;
-            }
+
         }
 
         /* ── Mobile Input box adjustments (≤ 600px) ── */
@@ -409,39 +378,7 @@
             overflow: hidden;
         }
 
-        #main-chat.centered-layout {
-            --centered-composer-width: min(860px, calc(100vw - 32px));
-        }
 
-        #main-chat.centered-layout #chat-box {
-            justify-content: flex-start;
-            align-items: stretch;
-            padding: 24px 16px 40px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        #main-chat.centered-layout #message-form {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 58%;
-            transform: translateY(-50%);
-            background-image: none;
-            padding: 0 24px;
-        }
-
-        #main-chat.centered-layout #message-form .input-wrapper {
-            max-width: 860px;
-            margin: 0 auto;
-            margin-left: auto; /* Reset left indentation for landing page centering */
-            width: 100%;
-        }
-
-        #main-chat.centered-layout .empty-state {
-            margin-top: auto;
-            margin-bottom: 42%;
-        }
 
         /* Chat box — always centered column */
         #chat-box {
@@ -462,8 +399,10 @@
         }
 
         .empty-state {
-            width: min(var(--centered-composer-width, 860px), 100%);
+            width: min(720px, 100%);
             max-width: 100%;
+            margin-top: auto;
+            margin-bottom: auto;
             margin-left: auto;
             margin-right: auto;
             text-align: center;
@@ -552,7 +491,7 @@
             padding: 0;
             color: #d1d5db;
             align-items: flex-start;
-            width: min(100%, 860px);
+            width: min(100%, 720px);
             max-width: 100%;
             align-self: center;
         }
@@ -608,7 +547,7 @@
 
         .message.bot .message-body {
             width: 100%;
-            max-width: min(100%, 860px);
+            max-width: min(100%, 720px);
             min-width: 0;
         }
 
@@ -814,9 +753,9 @@
         #message-form {
             display: flex;
             justify-content: center;
-            width: min(100%, 860px);
+            width: 100%;
             max-width: 100%;
-            margin: 0 auto;
+            margin: 0;
             padding: 20px 16px 28px;
             background-color: transparent;
             background-image: linear-gradient(180deg, rgba(53, 55, 64, 0), #353740 58.85%);
@@ -825,10 +764,10 @@
         }
 
         #message-form .input-wrapper {
-            flex: 1;
-            margin-left: 56px; /* Indent left side to align with chatbot content start */
-            margin-right: 0;
-            width: auto;
+            max-width: 720px;
+            margin: 0 auto;
+            width: 100%;
+            flex: none;
         }
 
         .input-wrapper {
